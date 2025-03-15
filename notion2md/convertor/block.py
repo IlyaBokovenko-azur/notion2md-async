@@ -3,6 +3,7 @@ import hashlib
 import os
 import urllib.request as request
 from urllib.parse import urlparse,unquote
+import asyncio
 
 from cleo.io.io import IO
 
@@ -26,6 +27,10 @@ class BlockConvertor:
             results = executor.map(self.convert_block, blocks)
             outcome_blocks = "".join([result for result in results])
         return outcome_blocks
+        
+    async def convert_async(self, blocks: dict) -> str:
+        """Async adapter for the convert method using asyncio.to_thread"""
+        return await asyncio.to_thread(self.convert, blocks)
 
     def convert_block(
             self,
@@ -168,6 +173,10 @@ class BlockConvertor:
 
     def to_string(self, blocks: dict) -> str:
         return self.convert(blocks)
+        
+    async def to_string_async(self, blocks: dict) -> str:
+        """Async adapter for to_string method"""
+        return await self.convert_async(blocks)
 
 
 def check_block_is_blank(block, block_type):

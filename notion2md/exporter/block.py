@@ -59,6 +59,9 @@ class Exporter:
     def get_blocks(self):
         return self._client.get_children(self._config.target_id)
 
+    async def get_blocks_async(self):
+        return await self._client.get_children_async(self._config.target_id)
+
     def make_zip(self):
         zip_dir(
             os.path.join(self._config.output_path, self._config.file_name)
@@ -68,6 +71,9 @@ class Exporter:
         shutil.rmtree(self._config.tmp_path)
 
     def export(self):
+        pass
+
+    async def export_async(self):
         pass
 
 
@@ -85,10 +91,27 @@ class MarkdownExporter(Exporter):
         if not self._config.unzipped:
             self.make_zip()
 
+    async def export_async(self):
+        self.create_directories()
+        with open(
+            os.path.join(
+                self._config.tmp_path, self._config.file_name + ".md"
+            ),
+            "w",
+            encoding="utf-8",
+        ) as output:
+            output.write(await self.block_convertor.convert_async(await self.get_blocks_async()))
+        if not self._config.unzipped:
+            self.make_zip()
+
 
 class StringExporter(Exporter):
     def export(self):
         return self.block_convertor.to_string(self.get_blocks())
+    
+    async def export_async(self):
+        blocks = await self.get_blocks_async()
+        return await self.block_convertor.to_string_async(blocks)
 
 
 class CLIExporter(Exporter):
@@ -101,3 +124,13 @@ class CLIExporter(Exporter):
             encoding="utf-8",
         ) as output:
             output.write(self.block_convertor.convert(blocks))
+
+    async def export_async(self, blocks):
+        with open(
+            os.path.join(
+                self._config.tmp_path, self._config.file_name + ".md"
+            ),
+            "w",
+            encoding="utf-8",
+        ) as output:
+            output.write(await self.block_convertor.convert_async(blocks))
